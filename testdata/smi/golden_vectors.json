@@ -1,0 +1,229 @@
+[
+  {
+    "name": "write_frame",
+    "allow_preamble_suppression": false,
+    "frames": [
+      {
+        "preamble": 32,
+        "st": "01",
+        "op": "01",
+        "phy": "00101",
+        "reg": "11111",
+        "ta": "10",
+        "data": "1011111011101111",
+        "expect": {
+          "direction": "write",
+          "phy": 5,
+          "reg": 31,
+          "data": 48879,
+          "preamble_bits": 32,
+          "turnaround": "valid",
+          "complete": true,
+          "data_valid": true,
+          "diagnostics": []
+        }
+      }
+    ],
+    "result_diagnostics": []
+  },
+  {
+    "name": "read_frame_unverifiable_turnaround",
+    "allow_preamble_suppression": false,
+    "frames": [
+      {
+        "preamble": 32,
+        "st": "01",
+        "op": "10",
+        "phy": "11110",
+        "reg": "00010",
+        "ta": "10",
+        "data": "0001001000110100",
+        "expect": {
+          "direction": "read",
+          "phy": 30,
+          "reg": 2,
+          "data": 4660,
+          "preamble_bits": 32,
+          "turnaround": "unverifiable",
+          "complete": true,
+          "data_valid": true,
+          "diagnostics": ["smi_read_turnaround_unverifiable"]
+        }
+      }
+    ],
+    "result_diagnostics": []
+  },
+  {
+    "name": "preamble_suppressed",
+    "allow_preamble_suppression": true,
+    "frames": [
+      {
+        "preamble": 0,
+        "st": "01",
+        "op": "01",
+        "phy": "00000",
+        "reg": "00000",
+        "ta": "10",
+        "data": "1010101010101010",
+        "expect": {
+          "direction": "write",
+          "phy": 0,
+          "reg": 0,
+          "data": 43690,
+          "preamble_bits": 0,
+          "turnaround": "valid",
+          "complete": true,
+          "data_valid": true,
+          "diagnostics": []
+        }
+      }
+    ],
+    "result_diagnostics": []
+  },
+  {
+    "name": "invalid_opcode",
+    "allow_preamble_suppression": false,
+    "frames": [
+      {
+        "preamble": 32,
+        "st": "01",
+        "op": "00",
+        "phy": "00011",
+        "reg": "00100",
+        "ta": "10",
+        "data": "1100101011111110",
+        "expect": {
+          "direction": "unknown",
+          "phy": 3,
+          "reg": 4,
+          "data": 51966,
+          "preamble_bits": 32,
+          "turnaround": "unknown",
+          "complete": true,
+          "data_valid": true,
+          "diagnostics": ["smi_invalid_opcode"]
+        }
+      }
+    ],
+    "result_diagnostics": []
+  },
+  {
+    "name": "invalid_write_turnaround",
+    "allow_preamble_suppression": false,
+    "frames": [
+      {
+        "preamble": 32,
+        "st": "01",
+        "op": "01",
+        "phy": "00001",
+        "reg": "00010",
+        "ta": "00",
+        "data": "0001001000110100",
+        "expect": {
+          "direction": "write",
+          "phy": 1,
+          "reg": 2,
+          "data": 4660,
+          "preamble_bits": 32,
+          "turnaround": "invalid",
+          "complete": true,
+          "data_valid": true,
+          "diagnostics": ["smi_invalid_turnaround"]
+        }
+      }
+    ],
+    "result_diagnostics": []
+  },
+  {
+    "name": "truncated_data",
+    "allow_preamble_suppression": false,
+    "frames": [
+      {
+        "preamble": 32,
+        "st": "01",
+        "op": "01",
+        "phy": "11010",
+        "reg": "01011",
+        "ta": "10",
+        "data": "10101010",
+        "expect": {
+          "direction": "write",
+          "phy": 26,
+          "reg": 11,
+          "data": 0,
+          "preamble_bits": 32,
+          "turnaround": "valid",
+          "complete": false,
+          "data_valid": false,
+          "diagnostics": ["smi_truncated_frame"]
+        }
+      }
+    ],
+    "result_diagnostics": []
+  },
+  {
+    "name": "two_frames",
+    "allow_preamble_suppression": false,
+    "frames": [
+      {
+        "preamble": 32,
+        "st": "01",
+        "op": "01",
+        "phy": "00001",
+        "reg": "00000",
+        "ta": "10",
+        "data": "0001000100010001",
+        "expect": {
+          "direction": "write",
+          "phy": 1,
+          "reg": 0,
+          "data": 4369,
+          "preamble_bits": 32,
+          "turnaround": "valid",
+          "complete": true,
+          "data_valid": true,
+          "diagnostics": []
+        }
+      },
+      {
+        "preamble": 32,
+        "st": "01",
+        "op": "10",
+        "phy": "00010",
+        "reg": "00001",
+        "ta": "10",
+        "data": "0010001000100010",
+        "expect": {
+          "direction": "read",
+          "phy": 2,
+          "reg": 1,
+          "data": 8738,
+          "preamble_bits": 32,
+          "turnaround": "unverifiable",
+          "complete": true,
+          "data_valid": true,
+          "diagnostics": ["smi_read_turnaround_unverifiable"]
+        }
+      }
+    ],
+    "result_diagnostics": []
+  },
+  {
+    "name": "short_preamble_rejected",
+    "allow_preamble_suppression": false,
+    "expected_frames": 0,
+    "frames": [
+      {
+        "preamble": 8,
+        "st": "01",
+        "op": "01",
+        "phy": "00001",
+        "reg": "00010",
+        "ta": "10",
+        "data": "0000000000000011",
+        "expect": {}
+      }
+    ],
+    "result_diagnostics": ["smi_preamble_short", "smi_no_frames"]
+  }
+]

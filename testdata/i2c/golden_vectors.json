@@ -1,0 +1,186 @@
+[
+  {
+    "name": "write_2bytes",
+    "tokens": "S 10100000 A 00000001 A 11001100 A P",
+    "expect": {
+      "transactions": [
+        {
+          "complete": true,
+          "frames": [
+            {
+              "address": 80,
+              "address_bits": 7,
+              "direction": "write",
+              "address_ack": "ACK",
+              "repeated_start": false,
+              "has_stop": true,
+              "data": [1, 204],
+              "data_acks": ["ACK", "ACK"]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "read_2bytes_final_nack",
+    "tokens": "S 10100001 A 01010101 A 10101010 N P",
+    "expect": {
+      "transactions": [
+        {
+          "complete": true,
+          "frames": [
+            {
+              "address": 80,
+              "address_bits": 7,
+              "direction": "read",
+              "address_ack": "ACK",
+              "repeated_start": false,
+              "has_stop": true,
+              "data": [85, 170],
+              "data_acks": ["ACK", "NACK"]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "combined_write_then_read",
+    "tokens": "S 10100000 A 00010000 A R 10100001 A 01011010 N P",
+    "expect": {
+      "transactions": [
+        {
+          "complete": true,
+          "frames": [
+            {
+              "address": 80,
+              "address_bits": 7,
+              "direction": "write",
+              "address_ack": "ACK",
+              "repeated_start": false,
+              "has_stop": false,
+              "data": [16],
+              "data_acks": ["ACK"]
+            },
+            {
+              "address": 80,
+              "address_bits": 7,
+              "direction": "read",
+              "address_ack": "ACK",
+              "repeated_start": true,
+              "has_stop": true,
+              "data": [90],
+              "data_acks": ["NACK"]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "two_transactions",
+    "tokens": "S 10100000 A 00000001 A P I S 10100001 A 00000010 N P",
+    "expect": {
+      "transactions": [
+        {
+          "complete": true,
+          "frames": [
+            {
+              "address": 80,
+              "address_bits": 7,
+              "direction": "write",
+              "address_ack": "ACK",
+              "repeated_start": false,
+              "has_stop": true,
+              "data": [1],
+              "data_acks": ["ACK"]
+            }
+          ]
+        },
+        {
+          "complete": true,
+          "frames": [
+            {
+              "address": 80,
+              "address_bits": 7,
+              "direction": "read",
+              "address_ack": "ACK",
+              "repeated_start": false,
+              "has_stop": true,
+              "data": [2],
+              "data_acks": ["NACK"]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "address_nack",
+    "tokens": "S 10100110 N P",
+    "expect": {
+      "transactions": [
+        {
+          "complete": true,
+          "frames": [
+            {
+              "address": 83,
+              "address_bits": 7,
+              "direction": "write",
+              "address_ack": "NACK",
+              "repeated_start": false,
+              "has_stop": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "truncated_before_data_ack",
+    "tokens": "S 10100000 A 11001100",
+    "expect": {
+      "transactions": [
+        {
+          "complete": false,
+          "diagnostics": ["i2c_missing_ack", "i2c_missing_stop"],
+          "frames": [
+            {
+              "address": 80,
+              "address_bits": 7,
+              "direction": "write",
+              "address_ack": "ACK",
+              "repeated_start": false,
+              "has_stop": false,
+              "data": [204],
+              "data_acks": ["unknown"]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "ten_bit_prefix_unsupported",
+    "tokens": "S 11110000 A P",
+    "expect": {
+      "transactions": [
+        {
+          "complete": false,
+          "diagnostics": ["i2c_10bit_addressing_unsupported"],
+          "frames": [
+            {
+              "address": 0,
+              "address_bits": 0,
+              "direction": "unknown",
+              "address_ack": "ACK",
+              "repeated_start": false,
+              "has_stop": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

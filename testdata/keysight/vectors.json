@@ -1,0 +1,151 @@
+[
+  {
+    "name": "infinivision_byte_unsigned",
+    "payload_hex": "0080ff",
+    "preamble": {
+      "x_increment_s": 2e-09,
+      "x_origin_s": -1e-06,
+      "x_reference": 0,
+      "y_increment_v": 0.01,
+      "y_origin_v": 0,
+      "y_reference": 128
+    },
+    "encoding": {
+      "bytes_per_point": 1,
+      "signed": false,
+      "byte_order": ""
+    },
+    "expect": {
+      "sample_rate": 500000000,
+      "start_time": -1e-06,
+      "samples": [
+        -1.28,
+        0,
+        1.27
+      ]
+    }
+  },
+  {
+    "name": "infiniium_byte_signed",
+    "payload_hex": "80007f",
+    "preamble": {
+      "x_increment_s": 1e-09,
+      "x_origin_s": 0,
+      "x_reference": 0,
+      "y_increment_v": 0.01,
+      "y_origin_v": 0,
+      "y_reference": 0
+    },
+    "encoding": {
+      "bytes_per_point": 1,
+      "signed": true,
+      "byte_order": ""
+    },
+    "expect": {
+      "sample_rate": 1000000000,
+      "start_time": 0,
+      "samples": [
+        -1.28,
+        0,
+        1.27
+      ]
+    }
+  },
+  {
+    "name": "word_lsbfirst",
+    "payload_hex": "0201",
+    "preamble": {
+      "x_increment_s": 2e-09,
+      "x_origin_s": -5e-06,
+      "x_reference": 0,
+      "y_increment_v": 1,
+      "y_origin_v": 0,
+      "y_reference": 0
+    },
+    "encoding": {
+      "bytes_per_point": 2,
+      "signed": false,
+      "byte_order": "LSBFirst"
+    },
+    "expect": {
+      "sample_rate": 500000000,
+      "start_time": -5e-06,
+      "samples": [
+        258
+      ]
+    }
+  },
+  {
+    "name": "word_msbfirst_signed",
+    "payload_hex": "fffffffe",
+    "preamble": {
+      "x_increment_s": 1e-09,
+      "x_origin_s": 0,
+      "x_reference": 0,
+      "y_increment_v": 1,
+      "y_origin_v": 0,
+      "y_reference": 0
+    },
+    "encoding": {
+      "bytes_per_point": 2,
+      "signed": true,
+      "byte_order": "MSBFirst"
+    },
+    "expect": {
+      "sample_rate": 1000000000,
+      "start_time": 0,
+      "samples": [
+        -1,
+        -2
+      ]
+    }
+  },
+  {
+    "name": "xreference_nonzero",
+    "payload_hex": "80",
+    "preamble": {
+      "x_increment_s": 2e-09,
+      "x_origin_s": 0.001,
+      "x_reference": 100,
+      "y_increment_v": 1,
+      "y_origin_v": 0,
+      "y_reference": 128
+    },
+    "encoding": {
+      "bytes_per_point": 1,
+      "signed": false,
+      "byte_order": ""
+    },
+    "expect": {
+      "sample_rate": 500000000,
+      "start_time": 0.0009998,
+      "samples": [
+        0
+      ]
+    }
+  },
+  {
+    "name": "long_msbfirst_signed",
+    "payload_hex": "00000010",
+    "preamble": {
+      "x_increment_s": 5e-09,
+      "x_origin_s": 0,
+      "x_reference": 0,
+      "y_increment_v": 1,
+      "y_origin_v": 0,
+      "y_reference": 0
+    },
+    "encoding": {
+      "bytes_per_point": 4,
+      "signed": true,
+      "byte_order": "big"
+    },
+    "expect": {
+      "sample_rate": 200000000,
+      "start_time": 0,
+      "samples": [
+        16
+      ]
+    }
+  }
+]
