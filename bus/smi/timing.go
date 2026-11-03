@@ -14,10 +14,10 @@ import (
 //   - When the STA drives MDIO (write frames), setup and hold are measured
 //     relative to the MDC rising edge, as in Figure 22-18.
 //   - When the PHY drives MDIO (read frames, from the second turnaround bit
-//     onward), the measured parameter is the clock-to-output delay from the
-//     MDC rising edge to the MDIO output transition, as in Figure 22-19
-//     (0 ns to 300 ns). It is reported as tCO(MDIO) with DirectionRead and is
-//     not mixed with the write-direction tSU/tHD definitions.
+//     onward), tSU/tHD are measured around the MDC sampling edge and reported
+//     with DirectionRead. The hold measurement is the PHY clock-to-output
+//     delay defined by Figure 22-19 (0 ns to 300 ns). The names stay the same
+//     as in the write direction; Direction distinguishes the two.
 //
 // As with I2C, a timing value is only emitted when the MDIO transition that
 // defines it was actually observed. Bits that do not change have no measurable
@@ -47,7 +47,7 @@ func computeSMITimings(frames []Frame, metas []smiFrameMeta, mdcT, mdioT, mdcHig
 		meta := &metas[i]
 		ctx.addClockTimings(i, f)
 		if f.Direction == core.DirectionRead {
-			ctx.addReadClockToOutput(i, f, meta)
+			ctx.addReadSetupHold(i, f, meta)
 			continue
 		}
 		if f.Direction != core.DirectionWrite || !f.Complete {
@@ -143,20 +143,26 @@ func (c *smiTimingCtx) addWriteSetupHold(frameIndex int, f *Frame, meta *smiFram
 	}
 }
 
-// addReadClockToOutput measures tCO(MDIO) for the PHY-driven part of a read
-// frame. IEEE 802.3 22.3.4 Figure 22-19 defines the PHY clock-to-output delay
-// as the interval from an MDC rising edge to the MDIO output transition. The
-// PHY starts driving MDIO at the second turnaround bit (bitIndex 15); ST, OP,
-// PHYAD, REGAD and the first turnaround bit are still driven by the STA or
-// released to the pull-up.
+// addReadSetupHold measures tSU(MDIO)/tHD(MDIO) for the PHY-driven part of a
+// read frame, using the same names as the write direction and DirectionRead to
+// distinguish them.
 //
-// A bit is sampled on its own MDC rising edge, so the PHY launches that bit
-// after the preceding rising edge. A timing is emitted only when that launch
-// transition is actually visible between the two rising edges. A bit whose
-// value is unchanged has no output transition and therefore no fabricated
-// clock-to-output value.
-func (c *smiTimingCtx) addReadClockToOutput(frameIndex int, f *Frame, meta *smiFrameMeta) {
-	count := 0
+// The PHY starts driving MDIO at the second turnaround bit (bitIndex 15); ST,
+// OP, PHYAD, REGAD and the first turnaround bit are still driven by the STA or
+// released to the pull-up. A bit is sampled on its own MDC rising edge, so the
+// PHY launches that bit after the preceding rising edge (IEEE 802.3 22.3.4,
+// Figure 22-19):
+//
+//   - tSU(MDIO) is the preceding rising edge to the launch transition, i.e.
+//     the time the PHY output is stable before the sampling edge.
+//   - tHD(MDIO) is the sampling edge to the next launch transition, i.e. the
+//     PHY clock-to-output delay after the edge.
+//
+// A value is emitted only when the corresponding transition is actually
+// visible. Bits that do not change have no output transition and therefore no
+// fabricated value.
+func (c *smiTimingCtx) addReadSetupHold(frameIndex int, f *Frame, meta *smiFrameMeta) {
+	suCount, hdCount := 0, 0
 	for _, b := range meta.bits {
 		if b.bitIndex < readFirstPHYDrivenBit {
 			continue
@@ -166,18 +172,29 @@ func (c *smiTimingCtx) addReadClockToOutput(frameIndex int, f *Frame, meta *smiF
 			continue
 		}
 		prevRise, ok := previousEdgeOfKind(c.mdc.Edges, idx, core.EdgeRising)
-		if !ok || prevRise.Time < f.Start-c.tol {
-			continue
+		if ok && prevRise.Time >= f.Start-c.tol {
+			if e, ok := core.LastEdgeBetween(c.mdio.Edges, prevRise.Time, rise.Time); ok {
+				appendTiming(&f.Timings, core.TimingSUMDIO, e.Time, rise.Time, frameIndex, -1, b.bitIndex, b.phase, core.DirectionRead)
+				suCount++
+			}
 		}
-		if e, ok := core.FirstEdgeBetween(c.mdio.Edges, prevRise.Time, rise.Time); ok {
-			appendTiming(&f.Timings, core.TimingCOMDIO, prevRise.Time, e.Time, frameIndex, -1, b.bitIndex, b.phase, core.DirectionRead)
-			count++
+		nextRise, ok := core.FirstEdgeAfter(c.mdc.Edges, rise.Time, core.EdgeRising)
+		if ok && nextRise.Time <= f.End+c.tol {
+			if e, ok := core.FirstEdgeBetween(c.mdio.Edges, rise.Time, nextRise.Time); ok {
+				appendTiming(&f.Timings, core.TimingHDMDIO, rise.Time, e.Time, frameIndex, -1, b.bitIndex, b.phase, core.DirectionRead)
+				hdCount++
+			}
 		}
 	}
-	if count == 0 {
+	if suCount == 0 {
 		f.Diagnostics = append(f.Diagnostics, newDiagnostic(
 			core.CodeTimingNotObservable, core.SeverityInfo, timePtr(f.End),
-			"tCO(MDIO): no PHY-driven MDIO transition was observable between an MDC rising edge and the following rising edge in this read frame"))
+			"tSU(MDIO): no PHY-driven MDIO transition was observable before an MDC rising edge in this read frame"))
+	}
+	if hdCount == 0 {
+		f.Diagnostics = append(f.Diagnostics, newDiagnostic(
+			core.CodeTimingNotObservable, core.SeverityInfo, timePtr(f.End),
+			"tHD(MDIO): no PHY clock-to-output transition was observable after an MDC rising edge in this read frame"))
 	}
 }
 

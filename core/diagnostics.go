@@ -57,10 +57,11 @@ const (
 	CodeSMINoFrames      = "smi_no_frames"
 
 	// CodeSMIReadTimingUnsupported is retained so existing downstream code
-	// still compiles. Read-direction timing is now measured as tCO(MDIO)
-	// (IEEE 802.3 22.3.4, Figure 22-19); this code is no longer emitted.
+	// still compiles. Read-direction tSU/tHD are now reported with
+	// DirectionRead, so this code is no longer emitted.
 	//
-	// Deprecated: read frames produce TimingCOMDIO candidates instead.
+	// Deprecated: read frames produce TimingSUMDIO/TimingHDMDIO candidates
+	// with DirectionRead instead.
 	CodeSMIReadTimingUnsupported = "smi_read_direction_timing_unsupported"
 )
 

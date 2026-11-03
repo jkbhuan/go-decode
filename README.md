@@ -395,18 +395,22 @@ TA: Write 10；Read Z0（波形上通常读为 10）
 | `MDCHigh` | MDC 在 Vih 门限上的上升沿 → 下降沿 | 所有帧（IEEE 802.3 22.3：≥Vih 的持续时间） |
 | `MDCLow` | MDC 在 Vil 门限上的下降沿 → 上升沿 | 所有帧（≤Vil 的持续时间） |
 | `MDCPeriod` | 相邻 MDC 上升沿（Vih） | 所有帧 |
-| `tSU(MDIO)` | MDC 下降沿后/上升沿前的最后一个 MDIO 转换 → MDC 上升沿 | **仅 Write**（STA 驱动 MDIO） |
-| `tHD(MDIO)` | MDC 上升沿 → 下一 MDC 上升沿前的第一个 MDIO 转换 | **仅 Write** |
-| `tCO(MDIO)` | 前一个 MDC 上升沿 → 该位由 PHY 驱动的 MDIO 输出转换（转换位于前一个上升沿与本位上升沿之间） | **仅 Read**（PHY 驱动 MDIO） |
+| `tSU(MDIO)` | MDC 上升沿前的最后一个 MDIO 转换 → MDC 上升沿 | Write（STA 驱动）/ Read（PHY 驱动） |
+| `tHD(MDIO)` | MDC 上升沿 → 下一 MDC 上升沿前的第一个 MDIO 转换 | Write（STA 驱动）/ Read（PHY 驱动） |
 
-- Read 方向**不复用** Write 的 tSU/tHD 定义。Clause 22.3.4 / Figure 22-19 对
-  PHY 驱动 MDIO 定义的是 clock-to-output 延迟（0~300 ns），因此读帧从第二个
-  turnaround 位（`bitIndex=15`）开始测量 `tCO(MDIO)`，`Direction=read`。
-- Read 的 `tCO(MDIO)` 只对**实际发生翻转**的 PHY 驱动位产生；连续相同位没有
-  可观测的输出转换，不产生假值。若整个读帧没有可观测的输出转换，输出
-  `timing_not_observable` 诊断。
+- 时序名称固定为 `tSU(MDIO)` / `tHD(MDIO)`，与 I2C 一样用 `Timing.Direction`
+  区分读写：写帧为 `write`，读帧为 `read`。
+- 写帧按 Clause 22.3.4 / Figure 22-18 测量（STA 驱动 MDIO）：`tSU` 从上一个
+  MDC 下降沿之后的最后一个 MDIO 转换到采样上升沿；`tHD` 从采样上升沿到下一个
+  MDC 上升沿之前的第一个 MDIO 转换。
+- 读帧只从第二个 turnaround 位（`bitIndex=15`）开始，对 PHY 驱动的位测量，
+  `Direction=read`。PHY 在上升沿之后才输出数据（Figure 22-19），所以：
+  `tSU` 是前一个上升沿之后的输出转换到本位采样上升沿之间的时间（接近一个
+  MDC 周期）；`tHD` 是采样上升沿到下一次输出转换之间的时间，即 Figure 22-19
+  的 clock-to-output 延迟（0~300 ns）。
+- 只对**实际发生翻转**的 MDIO 位产生值；连续相同位没有可观测转换，不产生假值。
+  若某个方向没有可观测的转换，输出 `timing_not_observable` 诊断。
 - `smi_read_direction_timing_unsupported` 常量保留用于兼容，但不再产生。
-- 同样只对**可观测的 MDIO 转换**产生 Setup/Hold；连续相同位不产生假值。
 - 时序门限由 `TimingThreshold` 显式给出。未给出时不产生 SMI 时序，并输出
   `timing_threshold_missing`。代码中**没有**把 MDIO 的电平硬编码为某个 PHY 的
   具体门限；IEEE 802.3 的 MII `Vih(min)=2.00 V`、`Vil(max)=0.80 V` 只作为示例。
@@ -516,7 +520,7 @@ Go `error`；采集截断、协议异常、不可测指标返回诊断并尽量�
 | `smi_invalid_start_of_frame` / `smi_invalid_opcode` / `smi_invalid_turnaround` | 帧字段异常 |
 | `smi_read_turnaround_unverifiable` | 读 TA 高电平不能证明高阻 |
 | `smi_truncated_frame` | 帧位/字段未收全 |
-| `smi_read_direction_timing_unsupported` | 已废弃，不再产生（读方向改为测 `tCO(MDIO)`） |
+| `smi_read_direction_timing_unsupported` | 已废弃，不再产生（读方向以 `Direction=read` 输出 tSU/tHD） |
 | `smi_no_frames` | 未发现有效 Clause 22 帧 |
 
 ---
