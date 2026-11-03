@@ -131,11 +131,74 @@ func TestSMIReadFrameTAUnverifiable(t *testing.T) {
 	if len(findTiming(f.Timings, decode.TimingSUMDIO)) != 0 || len(findTiming(f.Timings, decode.TimingHDMDIO)) != 0 {
 		t.Fatal("read direction must not reuse write setup/hold definitions")
 	}
-	if !hasDiag(f.Diagnostics, decode.CodeSMIReadTimingUnsupported) {
-		t.Fatalf("missing read timing diagnostic: %+v", f.Diagnostics)
+	if hasDiag(f.Diagnostics, decode.CodeSMIReadTimingUnsupported) {
+		t.Fatalf("deprecated read-timing diagnostic must not be emitted: %+v", f.Diagnostics)
 	}
 	if len(findTiming(f.Timings, decode.TimingMDCPeriod)) == 0 {
 		t.Fatal("MDC period should still be measured for read frames")
+	}
+	// This waveform still uses the STA convention (MDIO changes at
+	// fall+DataHold), so the PHY clock-to-output candidates are the observed
+	// rise-to-transition intervals, not the write-definition tSU/tHD.
+	cos := findTiming(f.Timings, decode.TimingCOMDIO)
+	if len(cos) == 0 {
+		t.Fatalf("no tCO(MDIO) candidates: %+v", f.Diagnostics)
+	}
+	for _, tm := range cos {
+		if tm.Direction != decode.DirectionRead {
+			t.Fatalf("tCO direction = %s, want read", tm.Direction)
+		}
+		approx(t, tm.Value, 0.7e-6, 2.0/200e6, "tCO(MDIO)")
+		checkTimingInvariant(t, tm)
+	}
+}
+
+func TestSMIReadClockToOutputPHYDriven(t *testing.T) {
+	const tco = 20e-9
+	b := newTestMDIO(t, 0)
+	b.Preamble(32)
+	if err := b.ReadFrame(0x05, 0x1F, 0xBEEF, tco); err != nil {
+		t.Fatal(err)
+	}
+	mdc, mdio := buildMDIO(t, b)
+
+	res, err := decode.DecodeSMI(mdc, mdio, baseSMIOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Frames) != 1 {
+		t.Fatalf("frames = %d: %+v", len(res.Frames), res.Diagnostics)
+	}
+	f := res.Frames[0]
+	if f.Direction != decode.DirectionRead || f.Data != 0xBEEF {
+		t.Fatalf("frame = %+v", f)
+	}
+	cos := findTiming(f.Timings, decode.TimingCOMDIO)
+	if len(cos) == 0 {
+		t.Fatalf("no tCO(MDIO) candidates: %+v", f.Diagnostics)
+	}
+	sawTurnaround, sawData := false, false
+	for _, tm := range cos {
+		if tm.Direction != decode.DirectionRead {
+			t.Fatalf("tCO direction = %s, want read", tm.Direction)
+		}
+		approx(t, tm.Value, tco, 2.0/200e6, "tCO(MDIO)")
+		checkTimingInvariant(t, tm)
+		switch tm.Phase {
+		case "turnaround":
+			sawTurnaround = true
+		case "data":
+			sawData = true
+		}
+	}
+	if !sawTurnaround {
+		t.Fatal("no tCO candidate on the PHY-driven second turnaround bit")
+	}
+	if !sawData {
+		t.Fatal("no tCO candidate in the data phase")
+	}
+	if len(findTiming(f.Timings, decode.TimingSUMDIO)) != 0 || len(findTiming(f.Timings, decode.TimingHDMDIO)) != 0 {
+		t.Fatal("read direction must not reuse write setup/hold definitions")
 	}
 }
 

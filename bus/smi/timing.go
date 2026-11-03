@@ -13,15 +13,15 @@ import (
 //     direction, using the caller-supplied timing threshold.
 //   - When the STA drives MDIO (write frames), setup and hold are measured
 //     relative to the MDC rising edge, as in Figure 22-18.
-//   - When the PHY drives MDIO (read data after the turnaround), the clock-to-
-//     output relationship is a device parameter (commonly tVAL/tOINVLD) that
-//     cannot be inferred from Clause 22 alone. This implementation therefore
-//     reports a structured "unsupported for this direction" diagnostic rather
-//     than reusing the write-direction setup/hold definitions.
+//   - When the PHY drives MDIO (read frames, from the second turnaround bit
+//     onward), the measured parameter is the clock-to-output delay from the
+//     MDC rising edge to the MDIO output transition, as in Figure 22-19
+//     (0 ns to 300 ns). It is reported as tCO(MDIO) with DirectionRead and is
+//     not mixed with the write-direction tSU/tHD definitions.
 //
-// As with I2C, a setup/hold value is only emitted when the MDIO transition
-// that defines it was actually observed. Bits that do not change have no
-// measurable transition and are not assigned a fabricated value.
+// As with I2C, a timing value is only emitted when the MDIO transition that
+// defines it was actually observed. Bits that do not change have no measurable
+// transition and are not assigned a fabricated value.
 
 type smiTimingCtx struct {
 	mdc     core.LogicTrace // hysteresis: rising at Vih, falling at Vil
@@ -47,9 +47,7 @@ func computeSMITimings(frames []Frame, metas []smiFrameMeta, mdcT, mdioT, mdcHig
 		meta := &metas[i]
 		ctx.addClockTimings(i, f)
 		if f.Direction == core.DirectionRead {
-			f.Diagnostics = append(f.Diagnostics, newDiagnostic(
-				core.CodeSMIReadTimingUnsupported, core.SeverityInfo, timePtr(f.End),
-				"read-direction MDIO setup/hold was not measured: after the turnaround the PHY drives MDIO, and Clause 22 does not define the same tSU/tHD parameters for PHY-sourced data (see device tVAL/tOINVLD limits)"))
+			ctx.addReadClockToOutput(i, f, meta)
 			continue
 		}
 		if f.Direction != core.DirectionWrite || !f.Complete {
@@ -143,6 +141,59 @@ func (c *smiTimingCtx) addWriteSetupHold(frameIndex int, f *Frame, meta *smiFram
 			core.CodeTimingNotObservable, core.SeverityInfo, timePtr(f.End),
 			"tHD(MDIO): no MDIO transition was directly observable after an MDC rising edge in this write frame"))
 	}
+}
+
+// addReadClockToOutput measures tCO(MDIO) for the PHY-driven part of a read
+// frame. IEEE 802.3 22.3.4 Figure 22-19 defines the PHY clock-to-output delay
+// as the interval from an MDC rising edge to the MDIO output transition. The
+// PHY starts driving MDIO at the second turnaround bit (bitIndex 15); ST, OP,
+// PHYAD, REGAD and the first turnaround bit are still driven by the STA or
+// released to the pull-up.
+//
+// A bit is sampled on its own MDC rising edge, so the PHY launches that bit
+// after the preceding rising edge. A timing is emitted only when that launch
+// transition is actually visible between the two rising edges. A bit whose
+// value is unchanged has no output transition and therefore no fabricated
+// clock-to-output value.
+func (c *smiTimingCtx) addReadClockToOutput(frameIndex int, f *Frame, meta *smiFrameMeta) {
+	count := 0
+	for _, b := range meta.bits {
+		if b.bitIndex < readFirstPHYDrivenBit {
+			continue
+		}
+		rise, idx, ok := c.matchMDCRise(b.mdcOrdinal, b.mdcRise)
+		if !ok {
+			continue
+		}
+		prevRise, ok := previousEdgeOfKind(c.mdc.Edges, idx, core.EdgeRising)
+		if !ok || prevRise.Time < f.Start-c.tol {
+			continue
+		}
+		if e, ok := core.FirstEdgeBetween(c.mdio.Edges, prevRise.Time, rise.Time); ok {
+			appendTiming(&f.Timings, core.TimingCOMDIO, prevRise.Time, e.Time, frameIndex, -1, b.bitIndex, b.phase, core.DirectionRead)
+			count++
+		}
+	}
+	if count == 0 {
+		f.Diagnostics = append(f.Diagnostics, newDiagnostic(
+			core.CodeTimingNotObservable, core.SeverityInfo, timePtr(f.End),
+			"tCO(MDIO): no PHY-driven MDIO transition was observable between an MDC rising edge and the following rising edge in this read frame"))
+	}
+}
+
+// readFirstPHYDrivenBit is the first bit of the Clause 22 frame that the PHY
+// drives in a read transaction: the second turnaround bit.
+const readFirstPHYDrivenBit = 15
+
+// previousEdgeOfKind returns the closest edge of the requested kind strictly
+// before index idx.
+func previousEdgeOfKind(edges []core.Edge, idx int, kind core.EdgeKind) (core.Edge, bool) {
+	for i := idx - 1; i >= 0; i-- {
+		if edges[i].Kind == kind {
+			return edges[i], true
+		}
+	}
+	return core.Edge{}, false
 }
 
 func (c *smiTimingCtx) matchMDCRise(ordinal int, logicTime float64) (core.Edge, int, bool) {

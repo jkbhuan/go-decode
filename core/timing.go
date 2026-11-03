@@ -19,12 +19,18 @@ const (
 )
 
 // SMI / MDIO timing names.
+//
+// tSU(MDIO) and tHD(MDIO) apply to write frames, where the STA drives MDIO
+// (IEEE 802.3-2022, Clause 22.3.4 and Figure 22-18). tCO(MDIO) applies to read
+// frames, where the PHY drives MDIO: it is the MDC rising edge to MDIO output
+// transition delay defined by Figure 22-19 (0 ns to 300 ns).
 const (
 	TimingMDCPeriod TimingName = "MDCPeriod"
 	TimingMDCHigh   TimingName = "MDCHigh"
 	TimingMDCLow    TimingName = "MDCLow"
 	TimingSUMDIO    TimingName = "tSU(MDIO)"
 	TimingHDMDIO    TimingName = "tHD(MDIO)"
+	TimingCOMDIO    TimingName = "tCO(MDIO)"
 )
 
 // Direction is the data transfer direction of a frame or timing candidate.

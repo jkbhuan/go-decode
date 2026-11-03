@@ -53,8 +53,14 @@ const (
 	CodeSMIInvalidTurnaround     = "smi_invalid_turnaround"
 	CodeSMIReadTAUnverifiable    = "smi_read_turnaround_unverifiable"
 	CodeSMITruncatedFrame        = "smi_truncated_frame"
-	CodeSMIShortPreamble         = "smi_preamble_short"
-	CodeSMINoFrames              = "smi_no_frames"
+	CodeSMIShortPreamble = "smi_preamble_short"
+	CodeSMINoFrames      = "smi_no_frames"
+
+	// CodeSMIReadTimingUnsupported is retained so existing downstream code
+	// still compiles. Read-direction timing is now measured as tCO(MDIO)
+	// (IEEE 802.3 22.3.4, Figure 22-19); this code is no longer emitted.
+	//
+	// Deprecated: read frames produce TimingCOMDIO candidates instead.
 	CodeSMIReadTimingUnsupported = "smi_read_direction_timing_unsupported"
 )
 

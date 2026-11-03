@@ -105,9 +105,48 @@ func (b *MDIOBuilder) Preamble(n int) {
 // Frame emits a complete Clause 22 frame without preamble: ST, OP, PHYAD,
 // REGAD, TA and DATA. Read and write both use TA bits 1,0 (for a read this is
 // the waveform-visible Z (pull-up) followed by the PHY-driven zero).
+//
+// Frame schedules every MDIO change DataHold after the falling edge, which is
+// the STA-driven write convention. Use ReadFrame to model a PHY that launches
+// read data after the MDC rising edge.
 func (b *MDIOBuilder) Frame(dir core.Direction, phy, reg uint8, data uint16) {
 	bits := FrameBits(dir, phy, reg, data)
 	b.Bits(bits)
+}
+
+// ReadFrame emits a read frame in which the PHY drives MDIO from the second
+// turnaround bit onward. Each PHY-driven bit is launched clockToOutput after
+// the preceding MDC rising edge, as shown in IEEE 802.3-2022 Figure 22-19.
+// ST..REGAD and the first turnaround bit keep the STA timing used by Bit.
+func (b *MDIOBuilder) ReadFrame(phy, reg uint8, data uint16, clockToOutput float64) error {
+	if clockToOutput < 0 || clockToOutput >= b.cfg.MDCHighTime {
+		return fmt.Errorf("testwave: read clock-to-output (%g) must be in [0, MDC high time %g)",
+			clockToOutput, b.cfg.MDCHighTime)
+	}
+	bits := FrameBits(core.DirectionRead, phy, reg, data)
+	const firstPHYDriven = 15 // second turnaround bit
+	for i, bit := range bits {
+		if !b.started {
+			b.setMDC(false, b.end)
+			b.started = true
+		}
+		cycle := b.end
+		if i < firstPHYDriven && bit != b.mdioHigh {
+			// STA-driven header bit: changes after the falling edge.
+			b.setMDIO(bit, cycle+b.cfg.DataHold)
+		}
+		rise := cycle + b.cfg.lowTime()
+		b.setMDC(true, rise)
+		if i+1 < len(bits) && i+1 >= firstPHYDriven {
+			// The PHY launches the next bit after this rising edge.
+			if next := bits[i+1]; next != b.mdioHigh {
+				b.setMDIO(next, rise+clockToOutput)
+			}
+		}
+		b.setMDC(false, cycle+b.cfg.MDCPeriod)
+		b.end = cycle + b.cfg.MDCPeriod
+	}
+	return nil
 }
 
 // FrameBits returns the 32 frame bits (ST..DATA) for a Clause 22 frame.

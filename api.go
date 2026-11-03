@@ -67,6 +67,7 @@ const (
 	TimingMDCLow    = core.TimingMDCLow
 	TimingSUMDIO    = core.TimingSUMDIO
 	TimingHDMDIO    = core.TimingHDMDIO
+	TimingCOMDIO    = core.TimingCOMDIO
 )
 
 const (
