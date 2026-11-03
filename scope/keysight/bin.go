@@ -139,10 +139,10 @@ func ReadBin(r io.ReaderAt, size int64, opts BinOptions) (core.Capture, error) {
 		if _, err := r.ReadAt(data, dataOffset); err != nil {
 			return cap, err
 		}
-		samples := make([]float64, points)
+		samples := make([]float32, points)
 		for i := int64(0); i < points; i++ {
 			bits := order.Uint32(data[i*4 : i*4+4])
-			samples[i] = float64(math.Float32frombits(bits))
+			samples[i] = math.Float32frombits(bits)
 		}
 		w := core.Waveform{Samples: samples, SampleRate: 1 / xInc, StartTime: xOrigin}
 		if err := w.Validate(); err != nil {

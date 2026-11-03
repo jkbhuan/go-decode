@@ -255,7 +255,7 @@ Tektronix 示例依据 `4-5-6-Series-MSO_Programmer.pdf` 使用
 
 ## 2. 数据单位与时间轴
 
-- `Waveform.Samples`：伏特（V）。
+- `Waveform.Samples`：`[]float32`，伏特（V）。
 - `Waveform.SampleRate`：Sa/s，必须为正有限值。
 - `Waveform.StartTime`：**第 0 个采样点**的仪器水平时间（s），不要求从 0 开始，
   允许负值；**禁止**传 Unix epoch 秒。

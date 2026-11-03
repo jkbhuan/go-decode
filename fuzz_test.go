@@ -54,11 +54,11 @@ func FuzzDecodeI2C(f *testing.F) {
 		if len(packed) < 4 {
 			return
 		}
-		sclSamples := make([]float64, len(packed))
-		sdaSamples := make([]float64, len(packed))
+		sclSamples := make([]float32, len(packed))
+		sdaSamples := make([]float32, len(packed))
 		for i, b := range packed {
-			sclSamples[i] = float64(b&1) * 3.3
-			sdaSamples[i] = float64((b>>1)&1) * 3.3
+			sclSamples[i] = float32(b&1) * 3.3
+			sdaSamples[i] = float32((b>>1)&1) * 3.3
 		}
 		scl := decode.Waveform{Samples: sclSamples, SampleRate: 1e6, StartTime: -1e-6}
 		sda := decode.Waveform{Samples: sdaSamples, SampleRate: 1e6, StartTime: -1e-6}
@@ -86,11 +86,11 @@ func FuzzDecodeSMI(f *testing.F) {
 		if len(packed) < 4 {
 			return
 		}
-		mdcSamples := make([]float64, len(packed))
-		mdioSamples := make([]float64, len(packed))
+		mdcSamples := make([]float32, len(packed))
+		mdioSamples := make([]float32, len(packed))
 		for i, b := range packed {
-			mdcSamples[i] = float64(b&1) * 3.3
-			mdioSamples[i] = float64((b>>1)&1) * 3.3
+			mdcSamples[i] = float32(b&1) * 3.3
+			mdioSamples[i] = float32((b>>1)&1) * 3.3
 		}
 		mdc := decode.Waveform{Samples: mdcSamples, SampleRate: 1e6, StartTime: 0}
 		mdio := decode.Waveform{Samples: mdioSamples, SampleRate: 1e6, StartTime: 0}

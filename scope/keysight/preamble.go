@@ -190,11 +190,11 @@ func FormatWaveform(payload []byte, p Preamble, encoding SampleEncoding) (core.W
 	}
 
 	n := len(payload) / bpp
-	samples := make([]float64, n)
+	samples := make([]float32, n)
 	for i := 0; i < n; i++ {
 		raw := decodeRaw(payload[i*bpp:(i+1)*bpp], bpp, encoding.Signed, order)
-		v := (raw-p.YReference)*p.YIncrement + p.YOrigin
-		if !core.IsFinite(v) {
+		v := float32((raw-p.YReference)*p.YIncrement + p.YOrigin)
+		if !core.IsFinite(float64(v)) {
 			return core.Waveform{}, fmt.Errorf("%w: converted sample %d is not finite", ErrInvalidPreamble, i)
 		}
 		samples[i] = v

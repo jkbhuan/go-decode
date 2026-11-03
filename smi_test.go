@@ -476,7 +476,7 @@ func TestSMIDifferentSampleRatesAndOffsets(t *testing.T) {
 }
 
 func TestSMIBadOptionsReturnError(t *testing.T) {
-	w := decode.Waveform{Samples: []float64{0, 1}, SampleRate: 1, StartTime: 0}
+	w := decode.Waveform{Samples: []float32{0, 1}, SampleRate: 1, StartTime: 0}
 	bad := []decode.SMIOptions{
 		{},
 		{MDCThreshold: decode.SingleThreshold(1), MDIOThreshold: decode.SingleThreshold(1), GlitchWidth: -1},

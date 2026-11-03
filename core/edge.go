@@ -78,7 +78,7 @@ func ExtractLogicTraceOnChannel(w Waveform, threshold LogicThreshold, glitchWidt
 	// Find the first sample that unambiguously defines the level.
 	first := -1
 	for i, v := range w.Samples {
-		if high, known := threshold.classify(v); known {
+		if high, known := threshold.classify(float64(v)); known {
 			tr.InitialHigh = high
 			tr.InitialKnown = true
 			first = i
@@ -103,10 +103,10 @@ func ExtractLogicTraceOnChannel(w Waveform, threshold LogicThreshold, glitchWidt
 	}
 
 	state := tr.InitialHigh
-	prevV := w.Samples[first]
+	prevV := float64(w.Samples[first])
 	prevT, _ := w.TimeAt(first)
 	for i := first + 1; i < len(w.Samples); i++ {
-		v := w.Samples[i]
+		v := float64(w.Samples[i])
 		curT, _ := w.TimeAt(i)
 		if state {
 			if v <= threshold.Low {

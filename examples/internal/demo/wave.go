@@ -42,7 +42,7 @@ func Build(cfg Config, initialHigh bool, transitions []Transition) (decode.Wavef
 
 	high := initialHigh
 	next := 0
-	samples := make([]float64, n)
+	samples := make([]float32, n)
 	for i := 0; i < n; i++ {
 		t := cfg.StartTime + float64(i)/cfg.SampleRate
 		for next < len(ts) && ts[next].T <= t {
@@ -50,9 +50,9 @@ func Build(cfg Config, initialHigh bool, transitions []Transition) (decode.Wavef
 			next++
 		}
 		if high {
-			samples[i] = cfg.High
+			samples[i] = float32(cfg.High)
 		} else {
-			samples[i] = cfg.Low
+			samples[i] = float32(cfg.Low)
 		}
 	}
 	w := decode.Waveform{Samples: samples, SampleRate: cfg.SampleRate, StartTime: cfg.StartTime}

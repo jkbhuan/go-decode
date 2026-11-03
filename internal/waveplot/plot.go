@@ -151,8 +151,9 @@ func drawAnalogLane(img *image.RGBA, ch Channel, xAt func(float64) int, left, ri
 	if len(w.Samples) == 0 || right <= left || bottom <= top {
 		return
 	}
-	minV, maxV := w.Samples[0], w.Samples[0]
-	for _, v := range w.Samples {
+	minV, maxV := float64(w.Samples[0]), float64(w.Samples[0])
+	for _, raw := range w.Samples {
+		v := float64(raw)
 		if v < minV {
 			minV = v
 		}
@@ -179,7 +180,8 @@ func drawAnalogLane(img *image.RGBA, ch Channel, xAt func(float64) int, left, ri
 		minY := make([]int, widthPx)
 		maxY := make([]int, widthPx)
 		seen := make([]bool, widthPx)
-		for i, v := range w.Samples {
+		for i, raw := range w.Samples {
+			v := float64(raw)
 			x := xAt(w.StartTime+float64(i)/w.SampleRate) - left
 			if x < 0 {
 				x = 0
@@ -207,7 +209,8 @@ func drawAnalogLane(img *image.RGBA, ch Channel, xAt func(float64) int, left, ri
 		return
 	}
 	prevX, prevY := 0, 0
-	for i, v := range w.Samples {
+	for i, raw := range w.Samples {
+		v := float64(raw)
 		x := xAt(w.StartTime + float64(i)/w.SampleRate)
 		y := yAt(v)
 		if i == 0 {
@@ -263,8 +266,9 @@ func drawWaveLane(img *image.RGBA, ch Channel, xAt func(float64) int, left, righ
 	if len(w.Samples) == 0 {
 		return
 	}
-	minV, maxV := w.Samples[0], w.Samples[0]
-	for _, v := range w.Samples {
+	minV, maxV := float64(w.Samples[0]), float64(w.Samples[0])
+	for _, raw := range w.Samples {
+		v := float64(raw)
 		if v < minV {
 			minV = v
 		}
@@ -273,12 +277,12 @@ func drawWaveLane(img *image.RGBA, ch Channel, xAt func(float64) int, left, righ
 		}
 	}
 	mid := (minV + maxV) / 2
-	high := w.Samples[0] >= mid
+	high := float64(w.Samples[0]) >= mid
 	prevX := left
 	prevY := laneY(high, highY, lowY)
 
 	for i := 1; i < len(w.Samples); i++ {
-		h := w.Samples[i] >= mid
+		h := float64(w.Samples[i]) >= mid
 		if h == high {
 			continue
 		}

@@ -9,7 +9,8 @@ import (
 // Waveform is one channel of a digitized analog voltage record.
 //
 // Units:
-//   - Samples are volts (V).
+//   - Samples are volts (V), stored as float32 to match instrument transfer
+//     formats and halve memory use for deep-memory captures.
 //   - SampleRate is samples per second (Sa/s).
 //   - StartTime is seconds (s) on the oscilloscope's horizontal time base and
 //     refers to the time of Samples[0]. It must never be a Unix epoch value.
@@ -18,7 +19,7 @@ import (
 // different sample rates, lengths and start times; they are aligned by time,
 // never by array index.
 type Waveform struct {
-	Samples    []float64
+	Samples    []float32
 	SampleRate float64
 	StartTime  float64
 }
@@ -36,7 +37,7 @@ var (
 )
 
 // NewWaveform validates the arguments and returns a Waveform.
-func NewWaveform(samples []float64, sampleRate, startTime float64) (Waveform, error) {
+func NewWaveform(samples []float32, sampleRate, startTime float64) (Waveform, error) {
 	w := Waveform{Samples: samples, SampleRate: sampleRate, StartTime: startTime}
 	if err := w.Validate(); err != nil {
 		return Waveform{}, err
@@ -61,7 +62,7 @@ func (w Waveform) Validate() error {
 		return ErrInvalidTimeAxis
 	}
 	for i, v := range w.Samples {
-		if !IsFinite(v) {
+		if !IsFinite(float64(v)) {
 			return fmt.Errorf("%w (index %d)", ErrNonFiniteSample, i)
 		}
 	}
@@ -111,15 +112,15 @@ func (w Waveform) SampleValueAt(t float64) (float64, error) {
 		return 0, fmt.Errorf("decode: time %g is outside waveform record [%g, %g]", t, w.StartTime, w.EndTime())
 	}
 	if pos <= 0 {
-		return w.Samples[0], nil
+		return float64(w.Samples[0]), nil
 	}
 	last := len(w.Samples) - 1
 	if pos >= float64(last) {
-		return w.Samples[last], nil
+		return float64(w.Samples[last]), nil
 	}
 	i := int(math.Floor(pos))
 	f := pos - float64(i)
-	return w.Samples[i]*(1-f) + w.Samples[i+1]*f, nil
+	return float64(w.Samples[i])*(1-f) + float64(w.Samples[i+1])*f, nil
 }
 
 // AlignWaveforms crops two channels to the common time range so that every

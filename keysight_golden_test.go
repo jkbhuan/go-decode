@@ -35,7 +35,7 @@ type goldenKeysightVector struct {
 	Expect   struct {
 		SampleRate float64   `json:"sample_rate"`
 		StartTime  float64   `json:"start_time"`
-		Samples    []float64 `json:"samples"`
+		Samples    []float32 `json:"samples"`
 	} `json:"expect"`
 }
 
@@ -80,7 +80,7 @@ func TestKeysightGoldenVectors(t *testing.T) {
 				t.Fatalf("samples = %d, want %d", len(w.Samples), len(v.Expect.Samples))
 			}
 			for i, want := range v.Expect.Samples {
-				approx(t, w.Samples[i], want, 1e-12, "sample")
+				approx(t, float64(w.Samples[i]), float64(want), 1e-6, "sample")
 			}
 		})
 	}

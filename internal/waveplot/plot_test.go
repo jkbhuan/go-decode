@@ -14,15 +14,15 @@ import (
 func TestRenderDigitalAndAnalog(t *testing.T) {
 	// Sparse waveform exercises the polyline path; dense exercises the
 	// per-column min/max envelope.
-	sparse := make([]float64, 200)
-	dense := make([]float64, 5000)
+	sparse := make([]float32, 200)
+	dense := make([]float32, 5000)
 	for i := range sparse {
 		if i%20 < 10 {
 			sparse[i] = 3.3
 		}
 	}
 	for i := range dense {
-		dense[i] = 1.65 + 1.4*math.Sin(float64(i)*0.01)
+		dense[i] = float32(1.65 + 1.4*math.Sin(float64(i)*0.01))
 	}
 	scl := decode.Waveform{Samples: sparse, SampleRate: 1e6, StartTime: -50e-6}
 	sda := decode.Waveform{Samples: dense, SampleRate: 1e6, StartTime: -50e-6}

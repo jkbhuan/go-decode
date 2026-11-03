@@ -7,7 +7,7 @@ import (
 )
 
 func TestCaptureChannelAndValidation(t *testing.T) {
-	w := core.Waveform{Samples: []float64{0, 1}, SampleRate: 1e6, StartTime: -1e-6}
+	w := core.Waveform{Samples: []float32{0, 1}, SampleRate: 1e6, StartTime: -1e-6}
 	c := core.Capture{Records: []core.Record{
 		{Channel: "CH1", SegmentIndex: 0, Waveform: w},
 		{Channel: "CH1", SegmentIndex: 1, Waveform: w},

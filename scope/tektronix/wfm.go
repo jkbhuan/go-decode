@@ -184,13 +184,13 @@ func ReadWFM(r io.ReaderAt, size int64, opts WFMOptions) (core.Capture, error) {
 	if _, err := r.ReadAt(raw, curveOffset+dataStart); err != nil {
 		return core.Capture{}, err
 	}
-	samples := make([]float64, n)
+	samples := make([]float32, n)
 	for i := int64(0); i < n; i++ {
 		v, err := decodeSample(raw[i*bpp:(i+1)*bpp], formatBPP, signed, isFloat, order)
 		if err != nil {
 			return core.Capture{}, err
 		}
-		samples[i] = expScale*v + expOffset
+		samples[i] = float32(expScale*v + expOffset)
 	}
 	startTime := impOffset + float64(dataStart/bpp)*impScale
 	w := core.Waveform{Samples: samples, SampleRate: 1 / impScale, StartTime: startTime}

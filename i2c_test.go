@@ -611,7 +611,7 @@ func TestI2CDifferentSampleRatesAndOffsets(t *testing.T) {
 }
 
 func TestI2CBadOptionsReturnError(t *testing.T) {
-	w := decode.Waveform{Samples: []float64{0, 1}, SampleRate: 1, StartTime: 0}
+	w := decode.Waveform{Samples: []float32{0, 1}, SampleRate: 1, StartTime: 0}
 	bad := []decode.I2COptions{
 		{}, // thresholds not configured
 		{SCLThreshold: decode.SingleThreshold(1), SDAThreshold: decode.SingleThreshold(1), VDD: -1},

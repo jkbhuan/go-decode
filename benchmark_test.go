@@ -9,7 +9,7 @@ import (
 
 func BenchmarkExtractLogicTrace(b *testing.B) {
 	const n = 200000
-	samples := make([]float64, n)
+	samples := make([]float32, n)
 	for i := range samples {
 		if (i/500)%2 == 0 {
 			samples[i] = 3.3

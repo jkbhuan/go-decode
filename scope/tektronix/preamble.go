@@ -172,14 +172,14 @@ func FormatWaveform(payload []byte, p Preamble, encoding SampleEncoding) (core.W
 		return core.Waveform{}, fmt.Errorf("decode: unknown Tektronix byte order %q", encoding.ByteOrder)
 	}
 	n := len(payload) / encoding.BytesPerPoint
-	samples := make([]float64, n)
+	samples := make([]float32, n)
 	for i := 0; i < n; i++ {
 		raw, err := decodeRaw(payload[i*encoding.BytesPerPoint:(i+1)*encoding.BytesPerPoint], encoding.BytesPerPoint, encoding.Signed, order)
 		if err != nil {
 			return core.Waveform{}, err
 		}
-		v := (raw-p.YOff)*p.YMult + p.YZero
-		if !core.IsFinite(v) {
+		v := float32((raw-p.YOff)*p.YMult + p.YZero)
+		if !core.IsFinite(float64(v)) {
 			return core.Waveform{}, fmt.Errorf("decode: Tektronix sample %d is not finite", i)
 		}
 		samples[i] = v

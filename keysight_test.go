@@ -31,7 +31,7 @@ func TestFormatKeysightByteUnsigned(t *testing.T) {
 	approx(t, w.StartTime, -1e-6, 1e-18, "start time")
 	want := []float64{-1.28, 0, 1.27}
 	for i := range want {
-		approx(t, w.Samples[i], want[i], 1e-12, "sample")
+		approx(t, float64(w.Samples[i]), want[i], 1e-6, "sample")
 	}
 	tt, _ := w.TimeAt(2)
 	approx(t, tt, -1e-6+2*2e-9, 1e-18, "TimeAt")
@@ -49,7 +49,7 @@ func TestFormatKeysightByteSigned(t *testing.T) {
 	}
 	want := []float64{-1.28, 0, 1.27}
 	for i := range want {
-		approx(t, w.Samples[i], want[i], 1e-12, "signed sample")
+		approx(t, float64(w.Samples[i]), want[i], 1e-6, "signed sample")
 	}
 }
 
@@ -70,8 +70,8 @@ func TestFormatKeysightWordByteOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	approx(t, little.Samples[0], 258, 1e-12, "LSBFirst")
-	approx(t, big.Samples[0], 258, 1e-12, "MSBFirst")
+	approx(t, float64(little.Samples[0]), 258, 1e-6, "LSBFirst")
+	approx(t, float64(big.Samples[0]), 258, 1e-6, "MSBFirst")
 
 	// Instruments often return the abbreviations LSBF/MSBF.
 	abbrev, err := decode.FormatKeysightWaveform([]byte{0x02, 0x01}, p, decode.SampleEncoding{
@@ -80,7 +80,7 @@ func TestFormatKeysightWordByteOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	approx(t, abbrev.Samples[0], 258, 1e-12, "LSBF")
+	approx(t, float64(abbrev.Samples[0]), 258, 1e-6, "LSBF")
 	if _, err := decode.FormatKeysightWaveform([]byte{0x01, 0x02}, p, decode.SampleEncoding{
 		BytesPerPoint: 2, Signed: false, ByteOrder: "MSBF",
 	}); err != nil {
@@ -98,7 +98,7 @@ func TestFormatKeysightWordSigned(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	approx(t, w.Samples[0], -1, 1e-12, "signed word")
+	approx(t, float64(w.Samples[0]), -1, 1e-6, "signed word")
 }
 
 func TestFormatKeysightStartTimeWithXReference(t *testing.T) {

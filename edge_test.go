@@ -82,9 +82,9 @@ func TestExtractLogicTraceLinearRampInterpolation(t *testing.T) {
 func TestExtractLogicTraceHysteresisRejectsNoiseBand(t *testing.T) {
 	// Small oscillation around 1.65 V, entirely inside the 1.2/2.1 V band.
 	n := 1000
-	samples := make([]float64, n)
+	samples := make([]float32, n)
 	for i := range samples {
-		samples[i] = 1.65 + 0.2*math.Sin(float64(i)*0.3)
+		samples[i] = float32(1.65 + 0.2*math.Sin(float64(i)*0.3))
 	}
 	w := decode.Waveform{Samples: samples, SampleRate: 1e6, StartTime: 0}
 	tr, err := decode.ExtractLogicTrace(w, decode.LogicThreshold{Low: 1.2, High: 2.1}, 0)
@@ -104,7 +104,7 @@ func TestExtractLogicTraceHysteresisRejectsNoiseBand(t *testing.T) {
 
 func TestExtractLogicTraceInitialUnknownNoInventedEdge(t *testing.T) {
 	w := decode.Waveform{
-		Samples:    []float64{1.65, 1.65, 3.3, 3.3, 0.0, 0.0},
+		Samples:    []float32{1.65, 1.65, 3.3, 3.3, 0.0, 0.0},
 		SampleRate: 1e6,
 		StartTime:  100e-6,
 	}
@@ -163,7 +163,7 @@ func TestGlitchSuppression(t *testing.T) {
 }
 
 func TestExtractLogicTraceRejectsBadInput(t *testing.T) {
-	w := decode.Waveform{Samples: []float64{0, 1}, SampleRate: 1, StartTime: 0}
+	w := decode.Waveform{Samples: []float32{0, 1}, SampleRate: 1, StartTime: 0}
 	if _, err := decode.ExtractLogicTrace(w, decode.LogicThreshold{Low: 2, High: 1}, 0); err == nil {
 		t.Fatal("expected invalid threshold error")
 	}
@@ -173,7 +173,7 @@ func TestExtractLogicTraceRejectsBadInput(t *testing.T) {
 }
 
 func TestExtractLogicTraceLowSamplingDiagnostic(t *testing.T) {
-	samples := []float64{0, 0, 0, 3.3, 0, 0, 0}
+	samples := []float32{0, 0, 0, 3.3, 0, 0, 0}
 	w := decode.Waveform{Samples: samples, SampleRate: 1e6, StartTime: 0}
 	tr, err := decode.ExtractLogicTrace(w, decode.SingleThreshold(1.65), 0)
 	if err != nil {
@@ -188,7 +188,7 @@ func TestExtractLogicTraceLowSamplingDiagnostic(t *testing.T) {
 }
 
 func TestExtractLogicTraceChannelLabel(t *testing.T) {
-	w := decode.Waveform{Samples: []float64{0, 3.3, 0}, SampleRate: 1e6, StartTime: 0}
+	w := decode.Waveform{Samples: []float32{0, 3.3, 0}, SampleRate: 1e6, StartTime: 0}
 	tr, err := decode.ExtractLogicTraceOnChannel(w, decode.SingleThreshold(1.65), 0, "SCL")
 	if err != nil {
 		t.Fatal(err)
@@ -204,7 +204,7 @@ func TestExtractLogicTraceChannelLabel(t *testing.T) {
 }
 
 func TestEdgeAccessors(t *testing.T) {
-	w := decode.Waveform{Samples: []float64{0, 3.3, 0, 0}, SampleRate: 1e6, StartTime: 0}
+	w := decode.Waveform{Samples: []float32{0, 3.3, 0, 0}, SampleRate: 1e6, StartTime: 0}
 	tr, err := decode.ExtractLogicTrace(w, decode.SingleThreshold(1.65), 0)
 	if err != nil {
 		t.Fatal(err)

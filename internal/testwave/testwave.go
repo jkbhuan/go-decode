@@ -100,7 +100,7 @@ func Build(cfg Config, initialHigh bool, transitions []Transition) (core.Wavefor
 		rng = rand.New(rand.NewSource(cfg.Seed ^ 0x5bd1e995))
 	}
 
-	samples := make([]float64, n)
+	samples := make([]float32, n)
 	for i := 0; i < n; i++ {
 		t := cfg.StartTime + float64(i)/cfg.SampleRate
 		unit := levelAt(t, initialHigh, trans, cfg)
@@ -108,7 +108,7 @@ func Build(cfg Config, initialHigh bool, transitions []Transition) (core.Wavefor
 		if rng != nil {
 			v += (rng.Float64()*2 - 1) * cfg.Noise
 		}
-		samples[i] = v
+		samples[i] = float32(v)
 	}
 	w := core.Waveform{Samples: samples, SampleRate: cfg.SampleRate, StartTime: cfg.StartTime}
 	if err := w.Validate(); err != nil {

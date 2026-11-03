@@ -116,7 +116,7 @@ var (
 )
 
 // Core functions.
-func NewWaveform(samples []float64, sampleRate, startTime float64) (Waveform, error) {
+func NewWaveform(samples []float32, sampleRate, startTime float64) (Waveform, error) {
 	return core.NewWaveform(samples, sampleRate, startTime)
 }
 
